@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python Challenge</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:"Pretendard","Noto Sans KR",Arial,sans-serif;background:linear-gradient(135deg,#eef6ff,#fff);color:#172033;min-height:100vh}
+.app{width:min(760px,calc(100% - 32px));margin:0 auto;padding:42px 0}
+.screen{background:rgba(255,255,255,.97);border-radius:28px;padding:36px;box-shadow:0 18px 50px rgba(35,86,150,.12);border:1px solid #e4efff}
+.hidden{display:none!important}
+.start-screen{text-align:center;padding:64px 36px}
+.logo{width:82px;height:82px;margin:0 auto 22px;border-radius:24px;display:grid;place-items:center;background:#eaf3ff;color:#1769d2;font-size:38px;font-weight:800}
+h1{margin:0 0 12px;font-size:clamp(32px,7vw,48px)}
+.subtitle{color:#65738a;font-size:17px;line-height:1.6}
+.primary-btn,.nav-btn{border:0;border-radius:16px;padding:15px 24px;background:#1769d2;color:white;font-size:16px;font-weight:700;cursor:pointer;transition:.18s}
+.primary-btn:hover,.nav-btn:hover:not(:disabled){transform:translateY(-2px);background:#0e59b9}
+.start-btn{margin-top:28px;min-width:180px}
+.quiz-top{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:14px}
+.question-number{font-weight:800;color:#1769d2}.score{font-weight:700;color:#53647d}
+.progress-track{height:10px;background:#e8eef7;border-radius:999px;overflow:hidden;margin-bottom:32px}
+.progress-bar{height:100%;width:0;background:#1769d2;border-radius:999px;transition:width .3s}
+.question{font-size:clamp(21px,4vw,28px);line-height:1.5;font-weight:800;margin:0 0 24px;white-space:pre-wrap}
+.code{background:#172033;color:#f3f7ff;padding:18px;border-radius:14px;font-family:Consolas,monospace;font-size:15px;line-height:1.6;overflow:auto;margin:-8px 0 24px;white-space:pre}
+.options{display:grid;gap:12px}
+.option{width:100%;text-align:left;padding:17px 18px;border:2px solid #dce7f5;border-radius:16px;background:#fff;color:#25334a;font-size:16px;font-weight:600;cursor:pointer;transition:.18s}
+.option:hover:not(:disabled){border-color:#7fb2ed;background:#f7fbff}
+.option.selected{border-color:#1769d2;background:#eaf3ff;color:#1256aa}
+.option:disabled{cursor:default}
+.nav-area{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:24px}
+.nav-btn.secondary{background:#eef3f9;color:#43546d}
+.nav-btn.secondary:hover:not(:disabled){background:#e0e9f4;color:#25334a}
+.nav-btn:disabled{background:#e8edf4;color:#9aa6b7;cursor:not-allowed}
+.result{text-align:center}.result-icon{font-size:58px;margin-bottom:8px}
+.result h2{font-size:32px;margin:0 0 10px}.result-score{font-size:46px;font-weight:900;color:#1769d2;margin:18px 0 6px}
+.result-sub{color:#65738a;margin-bottom:26px}
+.result-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.answer-review{margin-top:30px;text-align:left}
+.answer-review h3{margin:0 0 14px}
+.answer-card{border:1px solid #e3eaf4;border-radius:16px;padding:18px;margin-bottom:12px;background:#fbfcfe}
+.answer-card.correct{border-left:5px solid #20a464}.answer-card.wrong{border-left:5px solid #e24b4b}
+.answer-title{font-weight:800;line-height:1.5}
+.answer-status{font-weight:800;margin-top:10px}.correct-text{color:#147344}.wrong-text{color:#b52d2d}
+.answer-detail{margin-top:8px;line-height:1.6;color:#53647d}.explanation{margin-top:8px;padding:12px;background:#f4f7fb;border-radius:10px;color:#53647d;line-height:1.6}
+.small{font-size:14px;color:#65738a}
+@media(max-width:560px){.app{width:min(100% - 20px,760px);padding:20px 0}.screen{padding:24px 18px;border-radius:22px}.start-screen{padding:48px 20px}.option{font-size:15px}.nav-area{flex-wrap:wrap}.nav-btn{flex:1}}
+</style>
+</head>
+<body>
+<div class="app">
+<section id="startScreen" class="screen start-screen">
+<div class="logo">&lt;/&gt;</div>
+<h1>Python Challenge</h1>
+<p class="subtitle">파이썬 기본 문법을 재미있게 복습해 보세요!<br>총 5문제 · 문제당 20점</p>
+<button id="startBtn" class="primary-btn start-btn">퀴즈 시작하기</button>
+</section>
+
+<section id="quizScreen" class="screen hidden">
+<div class="quiz-top">
+<div id="questionNumber" class="question-number">1 / 5</div>
+<div class="score">Python Quiz</div>
+</div>
+<div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+<div id="questionArea"></div>
+<div id="options" class="options"></div>
+
+<div class="nav-area">
+<button id="prevBtn" class="nav-btn secondary">← 이전 문제</button>
+<button id="nextBtn" class="nav-btn">다음 문제 →</button>
+</div>
+<p class="small" style="text-align:center;margin-top:14px">정답은 마지막 결과 화면의 오답 확인에서 확인할 수 있습니다.</p>
+</section>
+
+<section id="resultScreen" class="screen result hidden">
+<div class="result-icon">🎉</div>
+<h2>퀴즈 완료!</h2>
+<div id="resultScore" class="result-score">100점</div>
+<div id="resultSub" class="result-sub">5문제 중 5문제를 맞혔어요.</div>
+<div class="result-actions">
+<button id="retryBtn" class="primary-btn">다시 풀기</button>
+</div>
+<div id="answerReview" class="answer-review"></div>
+</section>
+</div>
+
+<script>
+const questions=[
+{question:"다음 중 파이썬에서 조건문을 작성할 때 사용하는 키워드는 무엇인가?",options:["for","if","def","input"],answer:1,explanation:"`if`는 조건을 검사하고 조건이 참일 때 특정 코드를 실행하기 위해 사용한다."},
+{question:"다음 코드의 실행 결과는 무엇인가?",code:`x = 7
+
+if x >= 5:
+    print("A")
+else:
+    print("B")`,options:["A","B","7","오류 발생"],answer:0,explanation:"x는 7이고 7은 5보다 크거나 같으므로 조건이 참이 되어 A가 출력된다."},
+{question:"다음 중 리스트를 생성하는 올바른 방법은 무엇인가?",options:["(1, 2, 3)","[1, 2, 3]","{1, 2, 3}","<1, 2, 3>"],answer:1,explanation:"파이썬에서는 대괄호 `[ ]`를 사용하여 리스트를 생성한다."},
+{question:"다음 코드가 출력하는 숫자는 무엇인가?",code:`for i in range(3):
+    print(i)`,options:["1, 2, 3","0, 1, 2","0, 1, 2, 3","3"],answer:1,explanation:"`range(3)`은 0, 1, 2를 차례대로 생성한다."},
+{question:"파이썬에서 함수를 정의할 때 사용하는 키워드는 무엇인가?",options:["function","func","def","make"],answer:2,explanation:"파이썬에서는 `def` 키워드를 사용하여 함수를 정의한다."}
+];
+
+let current=0,score=0;
+let userAnswers=Array(questions.length).fill(null);
+
+const startScreen=document.getElementById("startScreen");
+const quizScreen=document.getElementById("quizScreen");
+const resultScreen=document.getElementById("resultScreen");
+const questionNumber=document.getElementById("questionNumber");
+const progressBar=document.getElementById("progressBar");
+const questionArea=document.getElementById("questionArea");
+const optionsEl=document.getElementById("options");
+const prevBtn=document.getElementById("prevBtn");
+const nextBtn=document.getElementById("nextBtn");
+const answerReview=document.getElementById("answerReview");
+
+function startQuiz(){
+current=0;score=0;userAnswers=Array(questions.length).fill(null);
+startScreen.classList.add("hidden");resultScreen.classList.add("hidden");quizScreen.classList.remove("hidden");
+showQuestion();
+}
+
+function showQuestion(){
+const q=questions[current];
+questionNumber.textContent=`${current+1} / ${questions.length}`;
+progressBar.style.width=`${((current+1)/questions.length)*100}%`;
+
+questionArea.innerHTML="";
+const title=document.createElement("div");
+title.className="question";title.textContent=q.question;questionArea.appendChild(title);
+
+if(q.code){
+const code=document.createElement("div");code.className="code";code.textContent=q.code;questionArea.appendChild(code);
+}
+
+optionsEl.innerHTML="";
+q.options.forEach((option,index)=>{
+const button=document.createElement("button");
+button.className="option";
+if(userAnswers[current]===index)button.classList.add("selected");
+button.textContent=`${["①","②","③","④"][index]} ${option}`;
+button.addEventListener("click",()=>selectAnswer(index));
+optionsEl.appendChild(button);
+});
+
+prevBtn.disabled=current===0;
+nextBtn.textContent=current===questions.length-1?"최종 결과 보기":"다음 문제 →";
+}
+
+function selectAnswer(index){
+userAnswers[current]=index;
+[...optionsEl.querySelectorAll(".option")].forEach((button,i)=>{
+button.classList.toggle("selected",i===index);
+});
+}
+
+function calculateScore(){
+score=userAnswers.reduce((total,answer,index)=>{
+return total+(answer===questions[index].answer?20:0);
+},0);
+}
+
+function nextQuestion(){
+if(userAnswers[current]===null){
+alert("답을 하나 선택해주세요.");
+return;
+}
+if(current<questions.length-1){
+current++;showQuestion();
+}else{
+showResult();
+}
+}
+
+function previousQuestion(){
+if(current>0){current--;showQuestion();}
+}
+
+function showResult(){
+calculateScore();
+quizScreen.classList.add("hidden");
+resultScreen.classList.remove("hidden");
+const correctCount=score/20;
+document.getElementById("resultScore").textContent=`${score}점`;
+document.getElementById("resultSub").textContent=`${questions.length}문제 중 ${correctCount}문제를 맞혔어요.`;
+renderReview();
+}
+
+function renderReview(){
+  const wrongQuestions = questions.filter((q, index) => userAnswers[index] !== q.answer);
+
+  if (wrongQuestions.length === 0) {
+    answerReview.innerHTML = `
+      <h3>오답 확인</h3>
+      <div class="answer-card correct">
+        <strong>🎯 모든 문제를 맞혔어요!</strong>
+        <div class="small" style="margin-top:8px">오답이 없습니다. 완벽해요!</div>
+      </div>`;
+    return;
+  }
+
+  answerReview.innerHTML = `<h3>오답 확인 (${wrongQuestions.length}문제)</h3>`;
+
+  wrongQuestions.forEach((q) => {
+    const index = questions.indexOf(q);
+    const user = userAnswers[index];
+    const card = document.createElement("div");
+    card.className = "answer-card wrong";
+
+    let html = `<div class="answer-title">${index + 1}. ${escapeHTML(q.question)}</div>`;
+
+    if (q.code) {
+      html += `<div class="code" style="margin:12px 0 0;font-size:13px">${escapeHTML(q.code)}</div>`;
+    }
+
+    html += `<div class="answer-status wrong-text">✗ 오답</div>`;
+    html += `<div class="answer-detail">내가 선택한 답: <strong>${user === null ? "선택하지 않음" : escapeHTML(q.options[user])}</strong></div>`;
+    html += `<div class="answer-detail">정답: <strong>${escapeHTML(q.options[q.answer])}</strong></div>`;
+    html += `<div class="explanation"><strong>해설</strong><br>${escapeHTML(q.explanation)}</div>`;
+
+    card.innerHTML = html;
+    answerReview.appendChild(card);
+  });
+}
+function escapeHTML(text){
+return text.replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[char]));
+}
+
+document.getElementById("startBtn").addEventListener("click",startQuiz);
+document.getElementById("retryBtn").addEventListener("click",startQuiz);
+nextBtn.addEventListener("click",nextQuestion);
+prevBtn.addEventListener("click",previousQuestion);
+</script>
+</body>
+</html>
